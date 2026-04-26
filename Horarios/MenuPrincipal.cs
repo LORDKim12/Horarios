@@ -387,5 +387,117 @@ namespace Horarios
                 }
             }
         }
+
+        private void dataGridViewMaestros_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            // Verificamos que se haya hecho clic en una fila válida (no en los encabezados)
+            if (e.RowIndex >= 0)
+            {
+                DataGridViewRow fila = dataGridViewMaestros.Rows[e.RowIndex];
+
+                // Guardamos el ID internamente (asumiendo que en tu SELECT lo llamaste "ID")
+                idMaestroSeleccionado = Convert.ToInt32(fila.Cells["ID"].Value);
+
+                // Pasamos los datos a los TextBox
+                textBox3.Text = fila.Cells["Nombre"].Value.ToString();
+                textBox1.Text = fila.Cells["Matricula"].Value.ToString();
+                textBox2.Text = fila.Cells["Cedula"].Value.ToString();
+                textBox4.Text = fila.Cells["Numero"].Value.ToString();
+            }
+        }
+        private int idMaestroSeleccionado = 0;
+
+        // Método para limpiar los cuadros de texto
+        private void LimpiarCamposMaestros()
+        {
+            textBox3.Clear(); // Nombre
+            textBox1.Clear(); // Matrícula
+            textBox2.Clear(); // Cédula
+            textBox4.Clear(); // Número
+            idMaestroSeleccionado = 0; // Reiniciamos el ID
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            // Validar que haya un maestro seleccionado
+            if (idMaestroSeleccionado == 0)
+            {
+                MessageBox.Show("Por favor, selecciona un maestro de la tabla primero.");
+                return;
+            }
+
+            Conexion conexion = new Conexion();
+            using (MySqlConnection conn = conexion.ObtenerConexion())
+            {
+                try
+                {
+                    conn.Open();
+                    string query = "UPDATE Maestros SET Nombre = @nom, Matricula = @mat, Cedula = @ced, Numero = @num WHERE IdMaestro = @id";
+                    MySqlCommand cmd = new MySqlCommand(query, conn);
+
+                    cmd.Parameters.AddWithValue("@nom", textBox3.Text);
+                    cmd.Parameters.AddWithValue("@mat", textBox1.Text);
+                    cmd.Parameters.AddWithValue("@ced", textBox2.Text);
+                    cmd.Parameters.AddWithValue("@num", textBox4.Text);
+                    cmd.Parameters.AddWithValue("@id", idMaestroSeleccionado);
+
+                    cmd.ExecuteNonQuery();
+
+                    MessageBox.Show("Datos del maestro actualizados correctamente.");
+
+                    LimpiarCamposMaestros();
+                    CargarMaestros(); // Recargamos la tabla para ver los cambios
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error al modificar: " + ex.Message);
+                }
+            }
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            if (idMaestroSeleccionado == 0)
+            {
+                MessageBox.Show("Por favor, selecciona un maestro de la tabla primero.");
+                return;
+            }
+
+            // Pedimos confirmación antes de borrar
+            DialogResult confirmacion = MessageBox.Show("¿Estás seguro de que deseas eliminar a este maestro?", "Confirmar Eliminación", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+            if (confirmacion == DialogResult.Yes)
+            {
+                Conexion conexion = new Conexion();
+                using (MySqlConnection conn = conexion.ObtenerConexion())
+                {
+                    try
+                    {
+                        conn.Open();
+                        string query = "DELETE FROM Maestros WHERE IdMaestro = @id";
+                        MySqlCommand cmd = new MySqlCommand(query, conn);
+                        cmd.Parameters.AddWithValue("@id", idMaestroSeleccionado);
+
+                        cmd.ExecuteNonQuery();
+                        MessageBox.Show("Maestro eliminado con éxito.");
+
+                        LimpiarCamposMaestros();
+                        CargarMaestros();
+                    }
+                    catch (MySqlException ex)
+                    {
+                        // Error 1451 significa que hay una restricción de llave foránea (Foreign Key)
+                        if (ex.Number == 1451)
+                        {
+                            MessageBox.Show("No puedes eliminar a este maestro porque tiene materias u horarios asignados. Primero elimina sus asignaciones.", "Operación Denegada", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                        else
+                        {
+                            MessageBox.Show("Error en la base de datos: " + ex.Message);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

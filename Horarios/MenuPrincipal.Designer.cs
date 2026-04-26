@@ -309,6 +309,7 @@
             button6.TabIndex = 11;
             button6.Text = "Eliminar";
             button6.UseVisualStyleBackColor = true;
+            button6.Click += button6_Click;
             // 
             // button5
             // 
@@ -318,6 +319,7 @@
             button5.TabIndex = 10;
             button5.Text = "Modificar";
             button5.UseVisualStyleBackColor = true;
+            button5.Click += button5_Click;
             // 
             // button4
             // 
@@ -401,6 +403,7 @@
             dataGridViewMaestros.RowHeadersWidth = 51;
             dataGridViewMaestros.Size = new Size(756, 188);
             dataGridViewMaestros.TabIndex = 0;
+            dataGridViewMaestros.CellClick += dataGridViewMaestros_CellClick;
             // 
             // MenuPrincipal
             // 
