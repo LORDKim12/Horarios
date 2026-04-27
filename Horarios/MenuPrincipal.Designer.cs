@@ -41,9 +41,12 @@
             comboBox1 = new ComboBox();
             dataGridView1 = new DataGridView();
             tabPage3 = new TabPage();
+            button11 = new Button();
+            checkedListBoxMaterias = new CheckedListBox();
+            comboBoxMaestrosAsignacion = new ComboBox();
+            dataGridViewMaterias = new DataGridView();
             label9 = new Label();
             label8 = new Label();
-            button10 = new Button();
             button9 = new Button();
             button8 = new Button();
             button7 = new Button();
@@ -66,6 +69,7 @@
             tabPage1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridView1).BeginInit();
             tabPage3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dataGridViewMaterias).BeginInit();
             tabPage2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridViewMaestros).BeginInit();
             SuspendLayout();
@@ -195,9 +199,12 @@
             // 
             // tabPage3
             // 
+            tabPage3.Controls.Add(button11);
+            tabPage3.Controls.Add(checkedListBoxMaterias);
+            tabPage3.Controls.Add(comboBoxMaestrosAsignacion);
+            tabPage3.Controls.Add(dataGridViewMaterias);
             tabPage3.Controls.Add(label9);
             tabPage3.Controls.Add(label8);
-            tabPage3.Controls.Add(button10);
             tabPage3.Controls.Add(button9);
             tabPage3.Controls.Add(button8);
             tabPage3.Controls.Add(button7);
@@ -210,74 +217,104 @@
             tabPage3.Text = "Clases";
             tabPage3.UseVisualStyleBackColor = true;
             // 
+            // button11
+            // 
+            button11.Location = new Point(549, 264);
+            button11.Name = "button11";
+            button11.Size = new Size(180, 31);
+            button11.TabIndex = 21;
+            button11.Text = "Guardar Asignaciones";
+            button11.UseVisualStyleBackColor = true;
+            button11.Click += button11_Click;
+            // 
+            // checkedListBoxMaterias
+            // 
+            checkedListBoxMaterias.FormattingEnabled = true;
+            checkedListBoxMaterias.Location = new Point(567, 64);
+            checkedListBoxMaterias.Name = "checkedListBoxMaterias";
+            checkedListBoxMaterias.Size = new Size(150, 180);
+            checkedListBoxMaterias.TabIndex = 20;
+            // 
+            // comboBoxMaestrosAsignacion
+            // 
+            comboBoxMaestrosAsignacion.FormattingEnabled = true;
+            comboBoxMaestrosAsignacion.Location = new Point(566, 16);
+            comboBoxMaestrosAsignacion.Name = "comboBoxMaestrosAsignacion";
+            comboBoxMaestrosAsignacion.Size = new Size(151, 28);
+            comboBoxMaestrosAsignacion.TabIndex = 19;
+            comboBoxMaestrosAsignacion.SelectionChangeCommitted += comboBoxMaestrosAsignacion_SelectionChangeCommitted;
+            // 
+            // dataGridViewMaterias
+            // 
+            dataGridViewMaterias.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridViewMaterias.Location = new Point(23, 175);
+            dataGridViewMaterias.Name = "dataGridViewMaterias";
+            dataGridViewMaterias.RowHeadersWidth = 51;
+            dataGridViewMaterias.Size = new Size(300, 188);
+            dataGridViewMaterias.TabIndex = 18;
+            dataGridViewMaterias.CellClick += dataGridViewMaterias_CellClick;
+            // 
             // label9
             // 
             label9.AutoSize = true;
-            label9.Location = new Point(27, 93);
+            label9.Location = new Point(23, 49);
             label9.Name = "label9";
             label9.Size = new Size(74, 20);
-            label9.TabIndex = 8;
+            label9.TabIndex = 17;
             label9.Text = "Matricula:";
             // 
             // label8
             // 
             label8.AutoSize = true;
-            label8.Location = new Point(27, 43);
+            label8.Location = new Point(23, 16);
             label8.Name = "label8";
             label8.Size = new Size(67, 20);
-            label8.TabIndex = 7;
+            label8.TabIndex = 16;
             label8.Text = "Nombre:";
-            // 
-            // button10
-            // 
-            button10.Location = new Point(656, 329);
-            button10.Name = "button10";
-            button10.Size = new Size(94, 29);
-            button10.TabIndex = 6;
-            button10.Text = "Consultas";
-            button10.UseVisualStyleBackColor = true;
             // 
             // button9
             // 
-            button9.Location = new Point(552, 329);
+            button9.Location = new Point(548, 322);
             button9.Name = "button9";
             button9.Size = new Size(98, 30);
-            button9.TabIndex = 5;
+            button9.TabIndex = 14;
             button9.Text = "Eliminar";
             button9.UseVisualStyleBackColor = true;
+            button9.Click += button9_Click;
             // 
             // button8
             // 
-            button8.Location = new Point(443, 329);
+            button8.Location = new Point(439, 322);
             button8.Name = "button8";
             button8.Size = new Size(94, 29);
-            button8.TabIndex = 4;
+            button8.TabIndex = 13;
             button8.Text = "Modificar";
             button8.UseVisualStyleBackColor = true;
+            button8.Click += button8_Click;
             // 
             // button7
             // 
-            button7.Location = new Point(343, 329);
+            button7.Location = new Point(339, 322);
             button7.Name = "button7";
             button7.Size = new Size(94, 29);
-            button7.TabIndex = 3;
+            button7.TabIndex = 12;
             button7.Text = "Registrar";
             button7.UseVisualStyleBackColor = true;
-            button7.Click += button7_Click;
+            button7.Click += button7_Click_1;
             // 
             // textBox6
             // 
-            textBox6.Location = new Point(127, 86);
+            textBox6.Location = new Point(123, 42);
             textBox6.Name = "textBox6";
             textBox6.Size = new Size(125, 27);
-            textBox6.TabIndex = 1;
+            textBox6.TabIndex = 11;
             // 
             // textBox5
             // 
-            textBox5.Location = new Point(127, 36);
+            textBox5.Location = new Point(123, 9);
             textBox5.Name = "textBox5";
             textBox5.Size = new Size(125, 27);
-            textBox5.TabIndex = 0;
+            textBox5.TabIndex = 10;
             // 
             // tabPage2
             // 
@@ -419,6 +456,7 @@
             ((System.ComponentModel.ISupportInitialize)dataGridView1).EndInit();
             tabPage3.ResumeLayout(false);
             tabPage3.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)dataGridViewMaterias).EndInit();
             tabPage2.ResumeLayout(false);
             tabPage2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)dataGridViewMaestros).EndInit();
@@ -453,13 +491,17 @@
         private Button button4;
         private Button button6;
         private Button button5;
-        private TextBox textBox6;
-        private TextBox textBox5;
+        private Button button11;
+        private CheckedListBox checkedListBoxMaterias;
+        private ComboBox comboBoxMaestrosAsignacion;
+        private DataGridView dataGridViewMaterias;
+        private Label label9;
+        private Label label8;
         private Button button10;
         private Button button9;
         private Button button8;
         private Button button7;
-        private Label label9;
-        private Label label8;
+        private TextBox textBox6;
+        private TextBox textBox5;
     }
 }

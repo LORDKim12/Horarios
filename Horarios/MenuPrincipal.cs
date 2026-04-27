@@ -18,7 +18,10 @@ namespace Horarios
             CargarMaestros();
             ConfigurarGridHorario();
             CargarDatosIniciales();
+            CargarDatosAsignacion();
         }
+
+
 
         private void tabPage1_Click(object sender, EventArgs e)
         {
@@ -53,6 +56,15 @@ namespace Horarios
 
         private void button4_Click(object sender, EventArgs e)
         {
+            // 1. Validación básica para evitar registros vacíos
+            if (string.IsNullOrWhiteSpace(textBox3.Text) || string.IsNullOrWhiteSpace(textBox1.Text))
+            {
+                MessageBox.Show("El Nombre y la Matrícula son obligatorios para registrar a un maestro.");
+                return;
+            }
+
+            // Nota: Usé ConexionBD basado en nuestros ejemplos anteriores. 
+            // Si tu clase se llama solo 'Conexion', cámbialo en esta línea.
             Conexion conexion = new Conexion();
             using (MySqlConnection conn = conexion.ObtenerConexion())
             {
@@ -62,7 +74,7 @@ namespace Horarios
                     string query = "INSERT INTO Maestros (Nombre, Matricula, Cedula, Numero) VALUES (@nom, @mat, @ced, @num)";
                     MySqlCommand cmd = new MySqlCommand(query, conn);
 
-                    // Asignar los valores de los TextBox (Asegúrate de que correspondan a tu diseño)
+                    // Asignar los valores de los TextBox 
                     cmd.Parameters.AddWithValue("@nom", textBox3.Text); // Nombre
                     cmd.Parameters.AddWithValue("@mat", textBox1.Text); // Matrícula
                     cmd.Parameters.AddWithValue("@ced", textBox2.Text); // Cédula
@@ -73,10 +85,18 @@ namespace Horarios
                     MessageBox.Show("Maestro registrado con éxito.");
 
                     // Limpiamos los TextBox
-                    textBox1.Clear(); textBox2.Clear(); textBox3.Clear(); textBox4.Clear();
+                    textBox1.Clear();
+                    textBox2.Clear();
+                    textBox3.Clear();
+                    textBox4.Clear();
 
-                    // Actualizamos la tabla
-                    CargarMaestros();
+                    // --- AQUÍ ESTÁ LA ACTUALIZACIÓN CLAVE ---
+                    // Llamamos a todos los métodos de carga para que el nuevo maestro
+                    // aparezca inmediatamente en todas las pestañas de tu sistema.
+                    CargarMaestros();             // Actualiza la tabla de esta misma pestaña (Maestros)
+                    CargarMaestrosParaCombo();    // Actualiza el ComboBox de la pestaña "Horarios"
+                    CargarDatosAsignacion();      // Actualiza el ComboBox de la pestaña "Clases"
+
                 }
                 catch (Exception ex)
                 {
@@ -225,7 +245,8 @@ namespace Horarios
                     DataTable dt = new DataTable();
                     adapter.Fill(dt);
 
-                    // comboBox3 es el de Maestros según tu diseño
+                    // IMPORTANTE: Limpiar el DataSource antes de reasignar
+                    comboBoxMaestro.DataSource = null;
                     comboBoxMaestro.DataSource = dt;
                     comboBoxMaestro.DisplayMember = "Nombre";
                     comboBoxMaestro.ValueMember = "IdMaestro";
@@ -233,7 +254,7 @@ namespace Horarios
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error al cargar maestros: " + ex.Message);
+                    MessageBox.Show("Error: " + ex.Message);
                 }
             }
         }
@@ -496,6 +517,310 @@ namespace Horarios
                             MessageBox.Show("Error en la base de datos: " + ex.Message);
                         }
                     }
+                }
+            }
+        }
+        private void CargarDatosAsignacion()
+        {
+            Conexion conexion = new Conexion();
+            using (MySqlConnection conn = conexion.ObtenerConexion())
+            {
+                try
+                {
+                    conn.Open();
+
+                    // 1. Cargar Maestros en el ComboBox
+                    string queryMaestros = "SELECT IdMaestro, Nombre FROM Maestros";
+                    MySqlDataAdapter adapterMaestros = new MySqlDataAdapter(queryMaestros, conn);
+                    DataTable dtMaestros = new DataTable();
+                    adapterMaestros.Fill(dtMaestros);
+
+                    comboBoxMaestrosAsignacion.DataSource = dtMaestros;
+                    comboBoxMaestrosAsignacion.DisplayMember = "Nombre";
+                    comboBoxMaestrosAsignacion.ValueMember = "IdMaestro";
+                    comboBoxMaestrosAsignacion.SelectedIndex = -1; // Para que inicie vacío
+
+                    // 2. Cargar Materias en el CheckedListBox
+                    string queryMaterias = "SELECT IdMateria, NombreMateria FROM Materias";
+                    MySqlDataAdapter adapterMaterias = new MySqlDataAdapter(queryMaterias, conn);
+                    DataTable dtMaterias = new DataTable();
+                    adapterMaterias.Fill(dtMaterias);
+
+                    // Configuramos el CheckedListBox para que use la base de datos
+                    ((ListBox)checkedListBoxMaterias).DataSource = dtMaterias;
+                    ((ListBox)checkedListBoxMaterias).DisplayMember = "NombreMateria";
+                    ((ListBox)checkedListBoxMaterias).ValueMember = "IdMateria";
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error al cargar datos de asignación: " + ex.Message);
+                }
+            }
+        }
+
+        private void comboBoxMaestrosAsignacion_SelectionChangeCommitted(object sender, EventArgs e)
+        {
+            // 1. Primero, quitamos las palomitas de todo por si había otro maestro seleccionado antes
+            for (int i = 0; i < checkedListBoxMaterias.Items.Count; i++)
+            {
+                checkedListBoxMaterias.SetItemChecked(i, false);
+            }
+
+            if (comboBoxMaestrosAsignacion.SelectedValue == null) return;
+
+            int idMaestroSeleccionado = Convert.ToInt32(comboBoxMaestrosAsignacion.SelectedValue);
+
+            Conexion conexion = new Conexion();
+            using (MySqlConnection conn = conexion.ObtenerConexion())
+            {
+                try
+                {
+                    conn.Open();
+                    // Consultamos qué materias tiene este maestro
+                    string query = "SELECT IdMateria FROM Maestros_Materias WHERE IdMaestro = @idMaestro";
+                    MySqlCommand cmd = new MySqlCommand(query, conn);
+                    cmd.Parameters.AddWithValue("@idMaestro", idMaestroSeleccionado);
+
+                    using (MySqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        // Leemos todos los IDs de las materias que imparte
+                        while (reader.Read())
+                        {
+                            int idMateriaQueImparte = Convert.ToInt32(reader["IdMateria"]);
+
+                            // Buscamos esa materia en el CheckedListBox y le ponemos la palomita
+                            for (int i = 0; i < checkedListBoxMaterias.Items.Count; i++)
+                            {
+                                DataRowView filaItem = (DataRowView)checkedListBoxMaterias.Items[i];
+                                int idMateriaLista = Convert.ToInt32(filaItem["IdMateria"]);
+
+                                if (idMateriaLista == idMateriaQueImparte)
+                                {
+                                    checkedListBoxMaterias.SetItemChecked(i, true);
+                                    break; // Encontramos la materia, pasamos a la siguiente del maestro
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error al buscar las materias del maestro: " + ex.Message);
+                }
+            }
+        }
+
+        private void button11_Click(object sender, EventArgs e)
+        {
+            if (comboBoxMaestrosAsignacion.SelectedValue == null)
+            {
+                MessageBox.Show("Por favor, selecciona un maestro primero.");
+                return;
+            }
+
+            int idMaestro = Convert.ToInt32(comboBoxMaestrosAsignacion.SelectedValue);
+
+            Conexion conexion = new Conexion();
+            using (MySqlConnection conn = conexion.ObtenerConexion())
+            {
+                try
+                {
+                    conn.Open();
+
+                    // 1. Borramos TODAS las asignaciones actuales de este maestro
+                    string queryDelete = "DELETE FROM Maestros_Materias WHERE IdMaestro = @idMaestro";
+                    MySqlCommand cmdDelete = new MySqlCommand(queryDelete, conn);
+                    cmdDelete.Parameters.AddWithValue("@idMaestro", idMaestro);
+                    cmdDelete.ExecuteNonQuery();
+
+                    // 2. Insertamos las materias que están "palomeadas" actualmente
+                    string queryInsert = "INSERT INTO Maestros_Materias (IdMaestro, IdMateria) VALUES (@idMaestro, @idMateria)";
+                    MySqlCommand cmdInsert = new MySqlCommand(queryInsert, conn);
+
+                    // Recorremos solo los items que están seleccionados (CheckedItems)
+                    foreach (object itemChecked in checkedListBoxMaterias.CheckedItems)
+                    {
+                        // Como usamos un DataSource, el item es un DataRowView
+                        DataRowView filaItem = (DataRowView)itemChecked;
+                        int idMateria = Convert.ToInt32(filaItem["IdMateria"]);
+
+                        cmdInsert.Parameters.Clear(); // Limpiamos los parámetros del ciclo anterior
+                        cmdInsert.Parameters.AddWithValue("@idMaestro", idMaestro);
+                        cmdInsert.Parameters.AddWithValue("@idMateria", idMateria);
+
+                        cmdInsert.ExecuteNonQuery();
+                    }
+
+                    MessageBox.Show("Materias asignadas correctamente al maestro.");
+
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error al guardar asignaciones: " + ex.Message);
+                }
+            }
+        }
+
+        private void dataGridViewMaterias_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            // Validamos que el clic sea en una fila con datos (y no en los encabezados grises)
+            if (e.RowIndex >= 0)
+            {
+                DataGridViewRow fila = dataGridViewMaterias.Rows[e.RowIndex];
+
+                // Guardamos el ID de la materia seleccionada
+                idMateriaSeleccionada = Convert.ToInt32(fila.Cells["ID"].Value);
+
+                // Pasamos el texto a los TextBox
+                textBox5.Text = fila.Cells["Nombre"].Value.ToString();
+
+                // *Nota: Si agregaste la columna "Matricula" o "Clave" a tu tabla Materias en MySQL,
+                // también la puedes pasar así:
+                // textBoxMatriculaMateria.Text = fila.Cells["Matricula"].Value.ToString();
+            }
+        }
+
+        private int idMateriaSeleccionada = 0;
+
+        private void LimpiarCamposMaterias()
+        {
+            // Asumiendo estos nombres de TextBox según tu diseño de "Clases"
+            textBox5.Clear();
+            textBox6.Clear();
+            idMateriaSeleccionada = 0;
+        }
+
+        private void CargarMaterias()
+        {
+            Conexion conexion = new Conexion();
+            using (MySqlConnection conn = conexion.ObtenerConexion())
+            {
+                try
+                {
+                    conn.Open();
+                    // Seleccionamos los datos para el DataGridView de materias
+                    string query = "SELECT IdMateria AS ID, NombreMateria AS Nombre FROM Materias";
+                    MySqlDataAdapter adapter = new MySqlDataAdapter(query, conn);
+                    DataTable dt = new DataTable();
+                    adapter.Fill(dt);
+                    dataGridViewMaterias.DataSource = dt; // El DataGridView que pusiste en la pestaña Clases
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error al cargar las materias: " + ex.Message);
+                }
+            }
+        }
+
+        private void button8_Click(object sender, EventArgs e)
+        {
+            if (idMateriaSeleccionada == 0)
+            {
+                MessageBox.Show("Por favor, selecciona una materia de la tabla haciendo clic en ella.");
+                return;
+            }
+
+            Conexion conexion = new Conexion();
+            using (MySqlConnection conn = conexion.ObtenerConexion())
+            {
+                try
+                {
+                    conn.Open();
+                    // Actualizamos el nombre. Si usas matrícula, agrégala también a la consulta.
+                    string query = "UPDATE Materias SET NombreMateria = @nom WHERE IdMateria = @id";
+                    MySqlCommand cmd = new MySqlCommand(query, conn);
+
+                    cmd.Parameters.AddWithValue("@nom", textBox5.Text);
+                    cmd.Parameters.AddWithValue("@id", idMateriaSeleccionada);
+
+                    cmd.ExecuteNonQuery();
+                    MessageBox.Show("Materia modificada exitosamente.");
+
+                    LimpiarCamposMaterias();
+                    CargarMaterias(); // Tu método para volver a llenar el DataGridView
+                    CargarDatosAsignacion(); // Si hiciste la parte del CheckedListBox, esto la actualiza
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error al modificar: " + ex.Message);
+                }
+            }
+        }
+
+        private void button9_Click(object sender, EventArgs e)
+        {
+            if (idMateriaSeleccionada == 0)
+            {
+                MessageBox.Show("Por favor, selecciona una materia de la tabla haciendo clic en ella.");
+                return;
+            }
+
+            DialogResult confirmacion = MessageBox.Show("¿Estás seguro de que deseas eliminar esta materia?", "Confirmar Eliminación", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+            if (confirmacion == DialogResult.Yes)
+            {
+                Conexion conexion = new Conexion();
+                using (MySqlConnection conn = conexion.ObtenerConexion())
+                {
+                    try
+                    {
+                        conn.Open();
+                        string query = "DELETE FROM Materias WHERE IdMateria = @id";
+                        MySqlCommand cmd = new MySqlCommand(query, conn);
+                        cmd.Parameters.AddWithValue("@id", idMateriaSeleccionada);
+
+                        cmd.ExecuteNonQuery();
+                        MessageBox.Show("Materia eliminada.");
+
+                        LimpiarCamposMaterias();
+                        CargarMaterias(); // Refrescar la tabla
+                    }
+                    catch (MySqlException ex)
+                    {
+                        // Error 1451: Llave foránea. Significa que la materia está en uso.
+                        if (ex.Number == 1451)
+                        {
+                            MessageBox.Show("No puedes eliminar esta materia porque ya está asignada a un maestro o a un horario. Quita las asignaciones primero.");
+                        }
+                        else
+                        {
+                            MessageBox.Show("Error en la base de datos: " + ex.Message);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void button7_Click_1(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(textBox5.Text))
+            {
+                MessageBox.Show("El nombre de la materia es obligatorio.");
+                return;
+            }
+
+            Conexion conexion = new Conexion();
+            using (MySqlConnection conn = conexion.ObtenerConexion())
+            {
+                try
+                {
+                    conn.Open();
+                    string query = "INSERT INTO Materias (NombreMateria) VALUES (@nombre)";
+                    MySqlCommand cmd = new MySqlCommand(query, conn);
+                    cmd.Parameters.AddWithValue("@nombre", textBox5.Text);
+
+                    cmd.ExecuteNonQuery();
+                    MessageBox.Show("Materia registrada con éxito.");
+
+                    LimpiarCamposMaterias();
+                    CargarMaterias();
+                    CargarDatosAsignacion(); // Actualiza el CheckedListBox de la otra sección
+                    CargarMaterias();          // Actualiza la tabla de la pestaña Clases
+                    CargarDatosAsignacion();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error al registrar: " + ex.Message);
                 }
             }
         }
